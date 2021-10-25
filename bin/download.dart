@@ -53,7 +53,7 @@ class Download {
       final aDesc = descReg.firstMatch(html);
       dir = Directory.current.absolute.path + '/down/$psId-$title/';
       if (!Directory(dir).existsSync()) {
-        Directory(dir).createSync();
+        Directory(dir).createSync(recursive: true);
       }
       File('${dir}desc.txt').writeAsStringSync(aDesc?.group(1) ?? '');
     }
@@ -70,9 +70,9 @@ class Download {
         try {
           await dio.download(url.replaceFirst('.flv', '.mp3'),
               '$dir$title-${idx.toString().padLeft(3, '0')}.mp3');
-          print("Download $idx success!");
+          stdout.writeln("Download $idx success!");
         } on DioError catch (_) {
-          print('Download $idx error, Retring...');
+          stdout.writeln('Download $idx error, Retring...');
           Future.delayed(Duration(seconds: 1)).then((_) {
             download(idx);
           });
@@ -82,17 +82,17 @@ class Download {
       if (total == 0 || idx < total) {
         download(idx + 1);
       } else if (total > 0) {
-        print('Download finish, total $idx');
+        stdout.writeln('Download finish, total $idx');
       }
     }).onError<DioError>((error, _) {
       if (!(error.type == DioErrorType.response &&
           error.response?.statusCode == 404)) {
-        print('Fetch $idx info error, Retring...');
+        stdout.writeln('Fetch $idx info error, Retring...');
         Future.delayed(Duration(seconds: 1)).then((_) {
           download(idx);
         });
       } else {
-        print('Download finish, total ${idx - 1}');
+        stdout.writeln('Download finish, total ${idx - 1}');
       }
     });
   }
