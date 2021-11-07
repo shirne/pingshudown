@@ -64,7 +64,7 @@ class Download {
     await dio
         .post('playdata/$psId/${idx > 1 ? idx : 'index'}.html')
         .then((Response response) async {
-      final data = jsonDecode(response.data);
+      final Map<String, dynamic> data = jsonDecode(response.data);
       final url = data['urlpath']?.toString();
       if (url != null) {
         try {
