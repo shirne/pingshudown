@@ -34,6 +34,9 @@ void main(List<String> arguments) async {
   ArgResults results = parser.parse(arguments);
 
   if (results.wasParsed(argHelp)) {
+    stdout.write('commands:\n  ');
+    stdout.writeln(parser.commands.keys.join('\n  '));
+    stdout.writeln('\noptions:');
     stdout.write(parser.usage);
     return;
   }
@@ -42,6 +45,11 @@ void main(List<String> arguments) async {
 
   if (results.command != null) {
     results = results.command!;
+
+    if (results.wasParsed(argHelp)) {
+      stdout.write(parser.commands[results.name!]!.usage);
+      return;
+    }
   }
 
   String? psId;
