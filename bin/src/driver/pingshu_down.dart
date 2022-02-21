@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import 'package:charset/charset.dart';
 import 'package:dio/dio.dart';
 
-class Download {
+import 'down_driver.dart';
+
+class PingshuDown extends DownDriver {
   final RegExp titleReg = RegExp(r'<title>([^<]*)</title>',
       multiLine: true, dotAll: true, caseSensitive: false);
   final RegExp charsetReg = RegExp(r'<meta\s+charset="([^>]*)"\s*/?>',
@@ -26,28 +28,19 @@ class Download {
   String title;
   String dir;
 
-  Download(this.psId, {this.title = '', this.dir = '', this.total = 0})
+  PingshuDown(this.psId, {this.title = '', this.dir = '', this.total = 0})
       : dio = Dio(BaseOptions(baseUrl: baseUrl, headers: {
           'User-Agent': userAgent,
           'Referer': '${baseUrl}play/$psId/',
-        }));
+        })),
+        super('pingshu');
 
+  @override
   Future<void> start({int startId = 1}) async {
     if (title.isEmpty) {
       final response = await dio.get('play/$psId/',
           options: Options(responseType: ResponseType.stream));
-      final stream = await (response.data as ResponseBody).stream.toList();
-      final result = BytesBuilder();
-      for (Uint8List subList in stream) {
-        result.add(subList);
-      }
-      final data = result.takeBytes();
-      String html = utf8.decode(data, allowMalformed: true);
-      final aCharset = charsetReg.firstMatch(html);
-      final charset = aCharset?.group(1)?.toLowerCase();
-      if (charset == 'gbk' || charset == 'gb2312') {
-        html = gbk.decode(data);
-      }
+      final html = await getHtml(response);
       final aTitle = titleReg.firstMatch(html);
       title = aTitle?.group(1)?.split(' ')[0] ?? '';
       final aDesc = descReg.firstMatch(html);
@@ -60,10 +53,13 @@ class Download {
     await download(startId);
   }
 
+  @override
   Future<void> download(int idx) async {
-    await dio
-        .post('playdata/$psId/${idx > 1 ? idx : 'index'}.html')
-        .then((Response response) async {
+    try {
+      Response response = await dio.post(
+        'playdata/$psId/${idx > 1 ? idx : 'index'}.html',
+        options: Options(responseType: ResponseType.json),
+      );
       final Map<String, dynamic> data = jsonDecode(response.data);
       final url = data['urlpath']?.toString();
       if (url != null) {
@@ -73,27 +69,25 @@ class Download {
           stdout.writeln("Download $idx success!");
         } on DioError catch (_) {
           stdout.writeln('Download $idx error, Retring...');
-          Future.delayed(Duration(seconds: 1)).then((_) {
-            download(idx);
-          });
+          await Future.delayed(Duration(seconds: 1));
+          await download(idx);
           return;
         }
       }
       if (total == 0 || idx < total) {
-        download(idx + 1);
+        await download(idx + 1);
       } else if (total > 0) {
         stdout.writeln('Download finish, total $idx');
       }
-    }).onError<DioError>((error, _) {
+    } on DioError catch (error) {
       if (!(error.type == DioErrorType.response &&
           error.response?.statusCode == 404)) {
         stdout.writeln('Fetch $idx info error, Retring...');
-        Future.delayed(Duration(seconds: 1)).then((_) {
-          download(idx);
-        });
+        await Future.delayed(Duration(seconds: 1));
+        await download(idx);
       } else {
         stdout.writeln('Download finish, total ${idx - 1}');
       }
-    });
+    }
   }
 }
