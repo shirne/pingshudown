@@ -40,9 +40,9 @@ class Ting55Down extends DownDriver {
     dotAll: true,
     caseSensitive: false,
   );
-  static const baseUrl = 'https://ting55.com/';
+  static const baseUrl = 'https://ting55.com';
   static const userAgent =
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1';
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56';
 
   final Dio dio;
   final CookieJar cookieJar = CookieJar();
@@ -55,7 +55,8 @@ class Ting55Down extends DownDriver {
   Ting55Down(this.psId, {this.title = '', this.dir = '', this.total = 0})
       : dio = Dio(BaseOptions(baseUrl: baseUrl, headers: {
           'User-Agent': userAgent,
-          'Referer': '${baseUrl}book/$psId',
+          'Origin': baseUrl,
+          'Referer': '$baseUrl/',
         })),
         super('ting55') {
     dio.interceptors.add(CookieManager(cookieJar));
@@ -65,7 +66,7 @@ class Ting55Down extends DownDriver {
   @override
   Future<void> start({int startId = 1}) async {
     if (title.isEmpty) {
-      final response = await dio.get('book/$psId',
+      final response = await dio.get('/book/$psId',
           options: Options(responseType: ResponseType.stream));
       final html = await getHtml(response);
       final aTitle = titleReg.firstMatch(html);
@@ -86,7 +87,7 @@ class Ting55Down extends DownDriver {
     String metaXt;
     String metaL;
     try {
-      Response response = await dio.get('book/$psId-$idx',
+      Response response = await dio.get('/book/$psId-$idx',
           options: Options(responseType: ResponseType.stream));
       final html = await getHtml(response);
       title = cTitleReg.firstMatch(html)?.group(1) ?? '';
@@ -110,7 +111,7 @@ class Ting55Down extends DownDriver {
     }
 
     try {
-      Response response = await dio.post('nlinka',
+      Response response = await dio.post('/nlinka',
           data: FormData.fromMap({
             'bookId': psId,
             'isPay': 0,
@@ -126,7 +127,8 @@ class Ting55Down extends DownDriver {
               'l': metaL,
             },
           ));
-
+      stdout.writeln(response.requestOptions.headers.toString());
+      stdout.writeln(response.headers.toString());
       final Map<String, dynamic> data = jsonDecode(response.data);
       final url = data['url']?.toString();
       if (url != null) {

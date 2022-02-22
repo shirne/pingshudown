@@ -43,8 +43,8 @@ abstract class DownDriver {
     String html = utf8.decode(data, allowMalformed: true);
     final aCharset = charsetReg.firstMatch(html);
     final charset = aCharset?.group(1)?.toLowerCase();
-    if (charset == 'gbk' || charset == 'gb2312') {
-      html = gbk.decode(data);
+    if (charset != null && charset.toLowerCase() != 'utf-8') {
+      html = Charset.getByName(charset)?.decode(data) ?? html;
     }
     return html;
   }
