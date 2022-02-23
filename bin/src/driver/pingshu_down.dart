@@ -10,8 +10,6 @@ import 'down_driver.dart';
 class PingshuDown extends DownDriver {
   final RegExp titleReg = RegExp(r'<title>([^<]*)</title>',
       multiLine: true, dotAll: true, caseSensitive: false);
-  final RegExp charsetReg = RegExp(r'<meta\s+charset="([^>]*)"\s*/?>',
-      multiLine: true, dotAll: true, caseSensitive: false);
   final RegExp descReg = RegExp(
       r'<meta\s+name="description"\s+content="([^>]*)"\s*/?>',
       multiLine: true,

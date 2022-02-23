@@ -7,7 +7,7 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 
 import 'down_driver.dart';
 
-class Ting55Down extends DownDriver {
+class LanrenDown extends DownDriver {
   final RegExp titleReg = RegExp(
     r'<title>([^<]*)</title>',
     multiLine: true,
@@ -21,24 +21,27 @@ class Ting55Down extends DownDriver {
     caseSensitive: false,
   );
   final RegExp descReg = RegExp(
-    r'<meta\s+name="description"\s+content="([^>]*)"\s*/?>',
+    r'<span\s+class="detail-content"\s+style="display: none;"\s*>(.*?)</span>',
     multiLine: true,
     dotAll: true,
     caseSensitive: false,
   );
-  final RegExp metaXtReg = RegExp(
-    r'<meta\s+name="_c"\s+content="([^>]*)"\s*/?>',
+
+  final RegExp itemReg = RegExp(
+    r'<li\s+.*?id="(\d+)"><a title="([^"]+)" href="([^"]+)"[^>]*>.*?</a></li>',
     multiLine: true,
     dotAll: true,
     caseSensitive: false,
   );
-  final RegExp metaLReg = RegExp(
-    r'<meta\s+name="_l"\s+content="([^>]*)"\s*/?>',
+
+  final RegExp urlReg = RegExp(
+    r'var now="([^"]+)"',
     multiLine: true,
     dotAll: true,
     caseSensitive: false,
   );
-  static const baseUrl = 'https://ting55.com';
+
+  static const baseUrl = 'https://www.lanrentingshu.net';
   static const userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56';
 
@@ -50,89 +53,55 @@ class Ting55Down extends DownDriver {
   String title;
   String dir;
 
-  Ting55Down(this.psId, {this.title = '', this.dir = '', this.total = 0})
+  final List<List<String>> urls = [];
+
+  LanrenDown(this.psId, {this.title = '', this.dir = '', this.total = 0})
       : dio = Dio(BaseOptions(baseUrl: baseUrl, headers: {
           'User-Agent': userAgent,
           'Origin': baseUrl,
           'Referer': '$baseUrl/',
         })),
-        super('ting55') {
+        super('lanren') {
     dio.interceptors.add(CookieManager(cookieJar));
     cookieJar.loadForRequest(Uri.parse(baseUrl));
   }
 
   @override
   Future<void> start({int startId = 1}) async {
+    final response = await dio.get('/video/?$psId-0-0.html',
+        options: Options(responseType: ResponseType.stream));
+    final html = await getHtml(response);
     if (title.isEmpty) {
-      final response = await dio.get('/book/$psId',
-          options: Options(responseType: ResponseType.stream));
-      final html = await getHtml(response);
       final aTitle = titleReg.firstMatch(html);
-      title = aTitle?.group(1)?.split('_播音')[0] ?? '';
-      final aDesc = descReg.firstMatch(html);
-      dir = Directory.current.absolute.path + '/down/$psId-$title/';
-      if (!Directory(dir).existsSync()) {
-        Directory(dir).createSync(recursive: true);
-      }
-      File('${dir}desc.txt').writeAsStringSync(aDesc?.group(1) ?? '');
+      title = aTitle?.group(1)?.split('有声书在线收听_')[0] ?? '';
+    }
+    final aDesc = descReg.firstMatch(html);
+    dir = Directory.current.absolute.path + '/down/$psId-$title/';
+    if (!Directory(dir).existsSync()) {
+      Directory(dir).createSync(recursive: true);
+    }
+    File('${dir}desc.txt').writeAsStringSync(aDesc?.group(1) ?? '');
+    final items = itemReg.allMatches(html);
+    for (RegExpMatch item in items) {
+      urls.add([item.group(1) ?? "", item.group(2) ?? "", item.group(3) ?? ""]);
+    }
+    if (urls.isEmpty) {
+      stdout.writeln("Not found any chapters!");
+      return;
     }
     await download(startId);
   }
 
   @override
   Future<void> download(int idx) async {
-    String title = '';
-    String metaXt;
-    String metaL;
     try {
-      Response response = await dio.get('/book/$psId-$idx',
+      Response response = await dio.get(urls[idx][2],
           options: Options(responseType: ResponseType.stream));
       final html = await getHtml(response);
-      title = cTitleReg.firstMatch(html)?.group(1) ?? '';
-      title = title.contains(' ') ? title.substring(title.indexOf(' ')) : '';
-
-      metaXt = metaXtReg.firstMatch(html)?.group(1) ?? '';
-      metaL = metaLReg.firstMatch(html)?.group(1) ?? '1';
-
-      stdout.writeln("get $idx title: $title, $metaXt, $metaL");
-    } on DioError catch (error) {
-      if (!(error.type == DioErrorType.response &&
-          error.response?.statusCode == 404)) {
-        stdout.writeln(
-            'Fetch(${error.requestOptions.uri.toString()}) $idx title error, Retring...');
-        await Future.delayed(Duration(seconds: 1));
-        await download(idx);
-      } else {
-        stdout.writeln('Download finish, total ${idx - 1}');
-      }
-      return;
-    }
-
-    try {
-      Response response = await dio.post('/nlinka',
-          data: FormData.fromMap({
-            'bookId': psId,
-            'isPay': 0,
-            'page': idx,
-          }),
-          options: Options(
-            responseType: ResponseType.json,
-            headers: {
-              'User-Agent': userAgent,
-              'Referer': '${baseUrl}book/$psId-$idx',
-              'X-Requested-With': 'XMLHttpRequest',
-              'xt': metaXt,
-              'l': metaL,
-            },
-          ));
-      final Map<String, dynamic> data = jsonDecode(response.data);
-      final url = data['url']?.toString();
+      final url = urlReg.firstMatch(html)?.group(1);
       if (url != null) {
         try {
-          await dio.download(
-            '$url?v=${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
-            '$dir$title-${idx.toString().padLeft(4, '0')}.mp3',
-          );
+          await dio.download(url, '$dir${urls[idx][1]}');
           stdout.writeln("Download $idx success!");
         } on DioError catch (_) {
           stdout.writeln('Download $idx error, Retring...');
@@ -144,7 +113,9 @@ class Ting55Down extends DownDriver {
         stdout.writeln("Chapter $idx has no media url!");
       }
       if (total == 0 || idx < total) {
-        await download(idx + 1);
+        if (idx + 1 < urls.length) {
+          await download(idx + 1);
+        }
       } else if (total > 0) {
         stdout.writeln('Download finish, total $idx');
       }

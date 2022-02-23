@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:charset/charset.dart';
 import 'package:dio/dio.dart';
 
+import 'lanren_down.dart';
 import 'pingshu_down.dart';
 import 'ting55_down.dart';
 
@@ -28,6 +29,8 @@ abstract class DownDriver {
     switch (driver) {
       case 'ting55':
         return Ting55Down(psId, title: title, dir: dir, total: total);
+      case 'lanren':
+        return LanrenDown(psId, title: title, dir: dir, total: total);
       default:
         return PingshuDown(psId, title: title, dir: dir, total: total);
     }
