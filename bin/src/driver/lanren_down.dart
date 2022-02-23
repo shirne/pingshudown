@@ -67,7 +67,7 @@ class LanrenDown extends DownDriver {
   }
 
   @override
-  Future<void> start({int startId = 1}) async {
+  Future<void> start({int startId = 0}) async {
     final response = await dio.get('/video/?$psId-0-0.html',
         options: Options(responseType: ResponseType.stream));
     final html = await getHtml(response);
@@ -89,6 +89,7 @@ class LanrenDown extends DownDriver {
       stdout.writeln("Not found any chapters!");
       return;
     }
+    stdout.writeln("Found ${urls.length} chapters, start download:");
     await download(startId);
   }
 
