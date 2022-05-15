@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:charset/charset.dart';
 import 'package:dio/dio.dart';
 
 import 'down_driver.dart';
@@ -17,9 +15,9 @@ class PingshuDown extends DownDriver {
       caseSensitive: false);
   static const baseUrl = 'http://m.zgpingshu.com/';
   static const userAgent =
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1';
-
-  final Dio dio;
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X)'
+      ' AppleWebKit/605.1.15 (KHTML, like Gecko)'
+      ' Version/13.0.3 Mobile/15E148 Safari/604.1';
 
   final String psId;
   int total;
@@ -27,18 +25,19 @@ class PingshuDown extends DownDriver {
   String dir;
 
   PingshuDown(this.psId, {this.title = '', this.dir = '', this.total = 0})
-      : dio = Dio(BaseOptions(baseUrl: baseUrl, headers: {
-          'User-Agent': userAgent,
-          'Referer': '${baseUrl}play/$psId/',
-        })),
-        super('pingshu');
+      : super(
+            'pingshu',
+            Dio(BaseOptions(baseUrl: baseUrl, headers: {
+              'User-Agent': userAgent,
+              'Referer': '${baseUrl}play/$psId/',
+            })));
 
   @override
   Future<void> start({int startId = 1}) async {
     if (title.isEmpty) {
       final response = await dio.get('play/$psId/',
           options: Options(responseType: ResponseType.stream));
-      final html = await getHtml(response);
+      final html = await decodeHtml(response);
       final aTitle = titleReg.firstMatch(html);
       title = aTitle?.group(1)?.split(' ')[0] ?? '';
       final aDesc = descReg.firstMatch(html);

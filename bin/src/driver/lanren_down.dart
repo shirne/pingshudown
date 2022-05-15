@@ -42,10 +42,10 @@ class LanrenDown extends DownDriver {
   );
 
   static const baseUrl = 'https://www.lanrentingshu.net';
-  static const userAgent =
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56';
+  static const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+      ' AppleWebKit/537.36 (KHTML, like Gecko)'
+      ' Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56';
 
-  final Dio dio;
   final CookieJar cookieJar = CookieJar();
 
   final String psId;
@@ -56,12 +56,13 @@ class LanrenDown extends DownDriver {
   final List<List<String>> urls = [];
 
   LanrenDown(this.psId, {this.title = '', this.dir = '', this.total = 0})
-      : dio = Dio(BaseOptions(baseUrl: baseUrl, headers: {
-          'User-Agent': userAgent,
-          'Origin': baseUrl,
-          'Referer': '$baseUrl/',
-        })),
-        super('lanren') {
+      : super(
+            'lanren',
+            Dio(BaseOptions(baseUrl: baseUrl, headers: {
+              'User-Agent': userAgent,
+              'Origin': baseUrl,
+              'Referer': '$baseUrl/',
+            }))) {
     dio.interceptors.add(CookieManager(cookieJar));
     cookieJar.loadForRequest(Uri.parse(baseUrl));
   }
@@ -70,7 +71,7 @@ class LanrenDown extends DownDriver {
   Future<void> start({int startId = 0}) async {
     final response = await dio.get('/video/?$psId-0-0.html',
         options: Options(responseType: ResponseType.stream));
-    final html = await getHtml(response);
+    final html = await decodeHtml(response);
     if (title.isEmpty) {
       final aTitle = titleReg.firstMatch(html);
       title = aTitle?.group(1)?.split('有声书在线收听_')[0] ?? '';
@@ -98,7 +99,7 @@ class LanrenDown extends DownDriver {
     try {
       Response response = await dio.get(urls[idx][2],
           options: Options(responseType: ResponseType.stream));
-      final html = await getHtml(response);
+      final html = await decodeHtml(response);
       final url = urlReg.firstMatch(html)?.group(1);
       if (url != null) {
         try {

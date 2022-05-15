@@ -42,7 +42,6 @@ class Ting55Down extends DownDriver {
   static const userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56';
 
-  final Dio dio;
   final CookieJar cookieJar = CookieJar();
 
   final String psId;
@@ -51,12 +50,13 @@ class Ting55Down extends DownDriver {
   String dir;
 
   Ting55Down(this.psId, {this.title = '', this.dir = '', this.total = 0})
-      : dio = Dio(BaseOptions(baseUrl: baseUrl, headers: {
-          'User-Agent': userAgent,
-          'Origin': baseUrl,
-          'Referer': '$baseUrl/',
-        })),
-        super('ting55') {
+      : super(
+            'ting55',
+            Dio(BaseOptions(baseUrl: baseUrl, headers: {
+              'User-Agent': userAgent,
+              'Origin': baseUrl,
+              'Referer': '$baseUrl/',
+            }))) {
     dio.interceptors.add(CookieManager(cookieJar));
     cookieJar.loadForRequest(Uri.parse(baseUrl));
   }
@@ -66,7 +66,7 @@ class Ting55Down extends DownDriver {
     if (title.isEmpty) {
       final response = await dio.get('/book/$psId',
           options: Options(responseType: ResponseType.stream));
-      final html = await getHtml(response);
+      final html = await decodeHtml(response);
       final aTitle = titleReg.firstMatch(html);
       title = aTitle?.group(1)?.split('_播音')[0] ?? '';
       final aDesc = descReg.firstMatch(html);
@@ -87,7 +87,7 @@ class Ting55Down extends DownDriver {
     try {
       Response response = await dio.get('/book/$psId-$idx',
           options: Options(responseType: ResponseType.stream));
-      final html = await getHtml(response);
+      final html = await decodeHtml(response);
       title = cTitleReg.firstMatch(html)?.group(1) ?? '';
       title = title.contains(' ') ? title.substring(title.indexOf(' ')) : '';
 

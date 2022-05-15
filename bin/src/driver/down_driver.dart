@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:charset/charset.dart';
 import 'package:dio/dio.dart';
 
+import 'gdbzkz_down.dart';
 import 'lanren_down.dart';
 import 'pingshu_down.dart';
 import 'ting55_down.dart';
@@ -17,7 +19,12 @@ abstract class DownDriver {
   );
 
   final String driverName;
-  DownDriver(this.driverName);
+
+  final Dio dio;
+
+  DownDriver(this.driverName, this.dio) {
+    stdout.writeln('$driverName initialized');
+  }
 
   factory DownDriver.driver(
     String driver,
@@ -31,12 +38,22 @@ abstract class DownDriver {
         return Ting55Down(psId, title: title, dir: dir, total: total);
       case 'lanren':
         return LanrenDown(psId, title: title, dir: dir, total: total);
+      case 'gdbzkz':
+        return GdbzkzDown(psId);
       default:
         return PingshuDown(psId, title: title, dir: dir, total: total);
     }
   }
 
-  Future<String> getHtml(Response response) async {
+  Future<String> getHtml(String url) async {
+    Response response = await dio.get(
+      url,
+      options: Options(responseType: ResponseType.stream),
+    );
+    return await decodeHtml(response);
+  }
+
+  Future<String> decodeHtml(Response response) async {
     final stream = await (response.data as ResponseBody).stream.toList();
     final result = BytesBuilder();
     for (Uint8List subList in stream) {
