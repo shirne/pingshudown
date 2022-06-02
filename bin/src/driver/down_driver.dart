@@ -9,6 +9,7 @@ import 'gdbzkz_down.dart';
 import 'lanren_down.dart';
 import 'pingshu_down.dart';
 import 'ting55_down.dart';
+import 'xscc_down.dart';
 
 abstract class DownDriver {
   final RegExp charsetReg = RegExp(
@@ -40,6 +41,8 @@ abstract class DownDriver {
         return LanrenDown(psId, title: title, dir: dir, total: total);
       case 'gdbzkz':
         return GdbzkzDown(psId);
+      case 'xscc':
+        return XsccDown(psId);
       default:
         return PingshuDown(psId, title: title, dir: dir, total: total);
     }
