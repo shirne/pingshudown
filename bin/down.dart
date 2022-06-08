@@ -50,6 +50,14 @@ void main(List<String> arguments) async {
               help: 'start chapter', abbr: 'n', defaultsTo: '0')
           ..addFlag(argHelp,
               help: 'show help message', abbr: 'h', negatable: false))
+    ..addCommand(
+        'zongheng',
+        ArgParser()
+          ..addOption(argId, help: 'id', abbr: 'i')
+          ..addOption(argStart,
+              help: 'start chapter', abbr: 'n', defaultsTo: '0')
+          ..addFlag(argHelp,
+              help: 'show help message', abbr: 'h', negatable: false))
     ..addOption(argId, help: 'id for pingshu', abbr: 'i')
     ..addOption(argStart,
         help: 'start chapter for pingshu', abbr: 'n', defaultsTo: '1')

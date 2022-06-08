@@ -10,6 +10,7 @@ import 'lanren_down.dart';
 import 'pingshu_down.dart';
 import 'ting55_down.dart';
 import 'xscc_down.dart';
+import 'zongheng_down.dart';
 
 abstract class DownDriver {
   final RegExp charsetReg = RegExp(
@@ -43,17 +44,25 @@ abstract class DownDriver {
         return GdbzkzDown(psId);
       case 'xscc':
         return XsccDown(psId);
+      case 'zongheng':
+        return ZonghengDown(psId);
       default:
         return PingshuDown(psId, title: title, dir: dir, total: total);
     }
   }
 
   Future<String> getHtml(String url) async {
-    Response response = await dio.get(
-      url,
-      options: Options(responseType: ResponseType.stream),
-    );
-    return await decodeHtml(response);
+    try {
+      Response response = await dio.get(
+        url,
+        options: Options(responseType: ResponseType.stream),
+      );
+      return await decodeHtml(response);
+    } on DioError catch (err) {
+      print(url);
+      print(err.message);
+      return '';
+    }
   }
 
   Future<String> decodeHtml(Response response) async {
