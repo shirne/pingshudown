@@ -6,7 +6,9 @@ import 'package:charset/charset.dart';
 import 'package:dio/dio.dart';
 
 import 'gdbzkz_down.dart';
+import 'honglou_down.dart';
 import 'lanren_down.dart';
+import 'm3u8_down.dart';
 import 'pingshu_down.dart';
 import 'ting55_down.dart';
 import 'xscc_down.dart';
@@ -46,21 +48,33 @@ abstract class DownDriver {
         return XsccDown(psId);
       case 'zongheng':
         return ZonghengDown(psId);
+      case 'honglou':
+        return HonglouDown(psId);
+      case 'm3u8':
+        return M3u8Down(psId);
       default:
         return PingshuDown(psId, title: title, dir: dir, total: total);
     }
   }
 
-  Future<String> getHtml(String url) async {
+  Future<String> getHtml(String url, {int retry = 3, int delay = 1}) async {
     try {
-      Response response = await dio.get(
+      final response = await dio.get(
         url,
-        options: Options(responseType: ResponseType.stream),
+        options: Options(
+          responseType: ResponseType.stream,
+          followRedirects: true,
+          maxRedirects: 3,
+          receiveDataWhenStatusError: true,
+        ),
       );
       return await decodeHtml(response);
     } on DioError catch (err) {
-      print(url);
       print(err.message);
+      if (retry > 0) {
+        await Future.delayed(Duration(seconds: delay));
+        return getHtml(url, retry: retry - 1, delay: delay + 1);
+      }
       return '';
     }
   }

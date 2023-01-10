@@ -15,7 +15,7 @@ dependencies:
   cookie_jar: 3.0.1
   charset: ^1.0.1
   #logger: ^1.1.0
-  html: 0.15.0
+  html: ^0.15.1
 
 dev_dependencies:
-  lints: ^1.0.0
+  lints: ^2.0.1
