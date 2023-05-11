@@ -10,13 +10,20 @@ import 'honglou_down.dart';
 import 'lanren_down.dart';
 import 'm3u8_down.dart';
 import 'pingshu_down.dart';
+import 'tianya_down.dart';
 import 'ting55_down.dart';
 import 'xscc_down.dart';
 import 'zongheng_down.dart';
 
 abstract class DownDriver {
-  final RegExp charsetReg = RegExp(
+  final charsetReg = RegExp(
     r'<meta\s+charset="([^>]*)"\s*/?>',
+    multiLine: true,
+    dotAll: true,
+    caseSensitive: false,
+  );
+  final contentCharsetReg = RegExp(
+    r'<meta\s+http-equiv="Content-Type"\s+content="text/html;\s*charset=([\w\d\-]+)"\s*/?>',
     multiLine: true,
     dotAll: true,
     caseSensitive: false,
@@ -40,6 +47,8 @@ abstract class DownDriver {
     switch (driver) {
       case 'ting55':
         return Ting55Down(psId, title: title, dir: dir, total: total);
+      case 'tianya':
+        return TianyaDown(psId);
       case 'lanren':
         return LanrenDown(psId, title: title, dir: dir, total: total);
       case 'gdbzkz':
@@ -70,7 +79,7 @@ abstract class DownDriver {
       );
       return await decodeHtml(response);
     } on DioError catch (err) {
-      print(err.message);
+      print('$url ${err.message}');
       if (retry > 0) {
         await Future.delayed(Duration(seconds: delay));
         return getHtml(url, retry: retry - 1, delay: delay + 1);
@@ -87,7 +96,8 @@ abstract class DownDriver {
     }
     final data = result.takeBytes();
     String html = utf8.decode(data, allowMalformed: true);
-    final aCharset = charsetReg.firstMatch(html);
+    final aCharset =
+        charsetReg.firstMatch(html) ?? contentCharsetReg.firstMatch(html);
     final charset = aCharset?.group(1)?.toLowerCase();
     if (charset != null && charset.toLowerCase() != 'utf-8') {
       html = Charset.getByName(charset)?.decode(data) ?? html;

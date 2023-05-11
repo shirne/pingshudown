@@ -37,7 +37,7 @@ class XsccDown extends DownDriver {
     final parts = dom.querySelector('.entry-text .m-post')?.children;
     if (parts != null) {
       for (Element e in parts) {
-        content.add(e.text.trim() + "\n");
+        content.add("${e.text.trim()}\n");
       }
     }
 

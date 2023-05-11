@@ -27,6 +27,14 @@ void main(List<String> arguments) async {
           ..addFlag(argHelp,
               help: 'show help message', abbr: 'h', negatable: false))
     ..addCommand(
+        'tianya',
+        ArgParser()
+          ..addOption(argId, help: 'id', abbr: 'i')
+          ..addOption(argStart,
+              help: 'start chapter', abbr: 'n', defaultsTo: '1')
+          ..addFlag(argHelp,
+              help: 'show help message', abbr: 'h', negatable: false))
+    ..addCommand(
         'lanren',
         ArgParser()
           ..addOption(argId, help: 'id', abbr: 'i')

@@ -70,7 +70,7 @@ class Ting55Down extends DownDriver {
       final aTitle = titleReg.firstMatch(html);
       title = aTitle?.group(1)?.split('_播音')[0] ?? '';
       final aDesc = descReg.firstMatch(html);
-      dir = Directory.current.absolute.path + '/down/$psId-$title/';
+      dir = '${Directory.current.absolute.path}/down/$psId-$title/';
       if (!Directory(dir).existsSync()) {
         Directory(dir).createSync(recursive: true);
       }
